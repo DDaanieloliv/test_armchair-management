@@ -1,11 +1,3 @@
-# test_armchair-management
-
-
-# **Projeto de Reserva de Poltronas**
-
-Este projeto é uma aplicação web usando **Java Spring Boot** (back-end) e **Angular** (front-end) que permite aos usuários visualizar e reservar poltronas em um layout responsivo.
-
----
 
 ## **Back-End**
 
@@ -107,4 +99,3 @@ http://localhost:8080
 
 
 ---
-
