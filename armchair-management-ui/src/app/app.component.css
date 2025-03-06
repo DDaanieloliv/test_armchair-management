@@ -1,0 +1,72 @@
+/* Estilo do container principal */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f9f9f9; /* Fundo claro e minimalista */
+  min-height: 100vh; /* Garante que o container ocupe toda a altura da tela */
+}
+
+/* Estilo do título */
+.seat-title {
+  text-align: center;
+  font-size: 2.5em; /* Tamanho maior para impacto */
+  color: #333; /* Cor escura e sóbria */
+  margin-bottom: 40px;
+  font-family: 'Poppins', sans-serif; /* Fonte moderna */
+  font-weight: 600; /* Peso da fonte */
+  position: relative; /* Para o efeito de sublinhado */
+  animation: fadeIn 1.5s ease-in-out; /* Animação de entrada */
+}
+
+/* Efeito de sublinhado minimalista */
+.seat-title::after {
+  content: '';
+  display: block;
+  width: 60px; /* Largura do sublinhado */
+  height: 3px; /* Espessura do sublinhado */
+  background: #007bff; /* Cor azul moderna */
+  margin: 10px auto 0; /* Centraliza o sublinhado */
+  transition: width 0.3s ease-in-out; /* Transição suave */
+}
+
+/* Animação de fadeIn para o título */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Container principal para as imagens e o grid de assentos */
+.main-content {
+  display: flex;
+  align-items: center; /* Alinha as imagens e o grid verticalmente */
+  justify-content: center; /* Centraliza o conteúdo horizontalmente */
+  gap: 20px; /* Espaçamento entre as imagens e o grid */
+}
+
+/* Ajustes para telas menores */
+@media (max-width: 768px) {
+  .seat-title {
+    font-size: 2em; /* Reduz o tamanho da fonte */
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .seat-title {
+    font-size: 1.5em; /* Reduz ainda mais o tamanho da fonte */
+    margin-bottom: 20px;
+  }
+
+  .seat-title::after {
+    width: 40px; /* Reduz a largura do sublinhado em telas menores */
+  }
+}
