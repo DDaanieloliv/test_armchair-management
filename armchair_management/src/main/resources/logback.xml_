@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--Ao nomearmos um arquivo para "logback.xml" na pasta src/main/resources o LogBack o detecta o arquivo, o
+        interpreta e o usa para configurar seu comportamento. Posteriormente O Spring Boot integra o Logback ao
+        sistema de logging da aplicação,-->
+
+    <!--O Logback usa o Joran Configuration Framework, que é uma engine para interpretar XML e e mapear cada tag
+        para uma classe Java correspondente.
+        Isso significa que cada tag no XML se conecta a uma classe dentro do Logback que define como os logs
+        devem ser processados.-->
+
+    <!--O Logback funciona com uma estrutura baseada em classes Java que interpretam o XML e definem como
+        os logs serão manipulados.
+        O Logback usa um sistema baseado em appenders, loggers e encoders para gerenciar os logs.
+        Cada logger define quais mensagens devem ser capturadas e cada appender define onde esses logs serão
+        armazenados.-->
+
+    <!--Tags como <logger> definem o nível de logs que serão capturados de um determinado pacote explicitado
+        no atributo name="..." . O nível dos logs que serão capturados do pacote definido será definido por
+        meio do atributo level="..." .
+        Ou seja, Define o pacote ou classe específica que terá seu nível de log configurado.-->
+
+    <!--Em tags como <appender>, há a definição para onde os logs serão enviados(arquivo, console, banco de
+        dados, etc.), cujo em seus atributos podemos como class definimos qual classe do Java será usado para
+        o appender.
+
+        O RollingFileAppender é escolhido porque ele permite criar logs rotativos, ou seja, ele
+        evita que um único arquivo de log fique enorme e difícil de gerenciar.
+        Se usássemos apenas FileAppender, ele manteria sempre o mesmo arquivo, sem criar novos ao longo do
+        tempo.
+
+        Ele delega a rotação dos logs para um "RollingPolicy", que pode ser:
+        TimeBasedRollingPolicy → Gera um novo arquivo baseado no tempo (ex: a cada dia).
+        SizeBasedTriggeringPolicy → Gera um novo arquivo baseado no tamanho (ex: a cada 10MB).-->
+
+
+    <!--Por meio da tag <encoder> podemos definir como os logs desse appender serão formatados, e para isso
+        ao fazer o parser pelo xml e vê o encoder é feita uma instância da classe PatternLayoutEncoder, onde
+        por meio da tag pattern poderemos definir o regex do formato do log que queremos definir.-->
+
+    <!--O atributo name em <appender> e <logger> serve para dar um identificador único para aquela configuração.
+        Isso permite que os loggers possam referenciar os appenders corretos. -->
+
+    <!-- O RollingPolicy controla quando um novo arquivo de log será criado. -->
+
+
+    <!-- Logger padrão do sistema -->
+    <logger name="com.ddaaniel.armchair_management" level="INFO"/>
+
+    <!-- Appender para logs da aplicação -->
+    <appender name="APP_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <file>logs/app.log</file> -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] [%thread] [%logger{36}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender para logs de auditoria -->
+    <appender name="AUDIT_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <file>logs/audit.log</file> -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/audit-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] [%thread] [AUDIT] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender para console -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] [%thread] [%logger{36}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logger específico para auditoria, isolado do root -->
+    <logger name="AUDIT" level="INFO" additivity="false">
+        <appender-ref ref="AUDIT_LOG"/>
+    </logger>
+
+    <!-- Root logger (Logs gerais da aplicação) -->
+    <root level="INFO">
+        <appender-ref ref="APP_LOG"/>
+        <appender-ref ref="CONSOLE"/> <!-- Enviar logs para o console -->
+    </root>
+
+</configuration>

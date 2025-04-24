@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment'; // Caminho relativo correto
+import { environment } from '../../environments/environment'; // Caminho relativo correto p/Prod
+//import { environmentDev } from '../../environments/environment'; // Caminho relativo correto p/Dev
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { Seat } from '../models/seat.model';
+import { timeout } from 'rxjs/operators';
+
 
 @Injectable({
   providedIn: 'root'
@@ -12,14 +15,39 @@ export class SeatService {
 
   constructor(private http: HttpClient) {}
 
-  private handleError(error: HttpErrorResponse) {
-    console.error('Erro na requisição:', error);
-    return throwError(() => new Error('Ocorreu um erro ao carregar os dados.'));
-  }
+ private handleError(error: HttpErrorResponse) {
+   let errorMessage = 'Ocorreu um erro inesperado. Tente novamente mais tarde.';
+
+   if (error.status === 0) {
+     errorMessage = 'Falha na conexão com o servidor.';
+   } else if (error.status >= 500) {
+     errorMessage = 'Erro interno no servidor. Nossa equipe já está verificando.';
+   } else if (error.status === 404) {
+     errorMessage = 'Recurso não encontrado.';
+   } else if (error.status === 403) {
+     errorMessage = 'Você não tem permissão para acessar esse recurso.';
+   }
+
+   // No modo de produção, não exibir detalhes no console
+   if (!environment.production) {
+     console.error('Erro na requisição:', {
+       status: error.status,
+       message: errorMessage
+     });
+   }
+
+   return throwError(() => new Error(errorMessage));
+ }
 
   getAllSeats(): Observable<Seat[]> {
     return this.http.get<Seat[]>(this.apiUrl).pipe(
-      catchError(this.handleError)
+      timeout(10000), // Limita a requisição a 10 segundos
+         catchError((error) => {
+           if (error.name === 'TimeoutError') {
+             return throwError(() => new Error('Tempo limite de conexão excedido. Tente novamente.'));
+           }
+           return this.handleError(error);
+         })
     );
   }
 

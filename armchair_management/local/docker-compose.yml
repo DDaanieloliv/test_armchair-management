@@ -1,13 +1,151 @@
-version: '3.8'
+services: # Diretiva que indica que sob essa sessão definiremos containers.
+  postgres_db: # Definimos o nome do serviço. Ou se preferir a chave do container.
+    image: postgres:17.4-alpine3.21 # Definimos a Imagem sob a qual esse container será executado.
+    ports:  # Diretiva tem função de expor e mapear portas entre host e containers.
+      - "127.0.0.1:5432:5432" # Definimos que portas serão mapeadas entre o host e o container.
+    container_name: postgres_db  # Definimos o nome do container para que a ele não seja atribuído um default.
+    restart: always # Definimos a política de reinicialização automática do container diante de paradas ou falhas.
+    environment:  # Definimos as variáveis de ambiente essenciais para configuração inicial do Banco de dados.
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
+    #  - .env.local  # Definimos a "file" que obteremos no ligar do padrão.
+    #command: --skip-name-resolve  # Utilizamos essa diretiva que nos permite comandos personalizados a respeito inicialização do container.
+    networks: # Usamos essa diretiva para associar esse container a uma rede Docker.
+      - my_network  # Explicitamos a qual rede/s esse container será associado.
+    healthcheck: # Definimos uma verificação periódica sobre a saúde do container, a qual ocorrerá mediante tais testes...
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s # Tempo entre cada Verificação
+      timeout: 5s # Tempo limite para execução do test antes de ser considerado falha.
+      retries: 5  # Número limite de falhas aceitas antes do container ser considerado unhealthy.
 
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_db
-    environment:
-        MYSQL_ROOT_PASSWORD: password
-        MYSQL_DATABASE: my_db
-        MYSQL_USER: user
-        MYSQL_PASSWORD: password
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
     ports:
-      - "3306:3306"
+      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=http://localhost:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
+    networks:
+      - my_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "127.0.0.1:3000:3000" # Grafana vai rodar na porta 3000
+    env_file:
+      - ./grafana/grafana.env.local
+    networks:
+      - my_network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - loki
+
+  postgres_exporter:
+    image: bitnami/postgres-exporter
+    container_name: postgres_exporter
+    ports:
+      - "127.0.0.1:9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:5432/${POSTGRES_DB}?sslmode=disable"
+    depends_on:
+      - postgres_db
+    networks:
+      - my_network
+
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - my_network
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    volumes:
+      - ./mailpit/data:/data
+    networks:
+      - my_network
+
+  loki:
+    image: grafana/loki:main
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    networks:
+      - my_network
+
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    volumes:
+      - ../logs:/var/log/myapp
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+    command: run /etc/alloy/config.alloy
+    depends_on:
+      - loki
+    networks:
+      - my_network
+
+
+
+  spring_app: # Definimos o nome do serviço.
+    build:  # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
+      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
+      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
+    image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
+    ports:  # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
+      - 8080:8080
+    container_name: spring_app # "Settamos" o nome do container ao ser executado.
+    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    volumes:
+      - ../logs:/app/logs
+    depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
+      postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
+        condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
+    environment: # Explicitamos que queremos passar variáveis de ambiente para a Imagem desse container. E as definimos.
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+      HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
+    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
+    #  - .env.local  # Definimos a "file" que obteremos no ligar do padrão.
+    networks: # Associamos esse container com uma rede/s especifica.
+      - my_network
+
+
+networks: # Terminada de definir os serviços que serão iniciados nesse docker-compose, usamos essa diretiva para definir quais redes usaremos nesse arquivo docker-compose.yml
+  my_network: # Definimos a criação de uma rede "my_network".
+    driver: bridge  # E "settamos" o drive de rede que ela usará.
+
+volumes:
+  grafana-storage:
+  loki-data:

@@ -8,7 +8,7 @@ target/
 node_modules/
 
 # Ignorar arquivos de ambiente local
-.env
+local/env/.env.local
 .env.local
 
 # Ignorar pastas de build

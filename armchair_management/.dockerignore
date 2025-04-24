@@ -1,0 +1,27 @@
+# Ignorar a pasta de build do Maven
+target/
+
+# Ignorar arquivos do Git
+.git
+.gitignore
+
+# Ignorar arquivos de configuração da IDE
+.idea/
+*.iml
+
+# Ignorar binários e caches do Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Ignorar arquivos de ambiente (para segurança)
+.env*
+!env.example  # Se quiser manter um exemplo de env
+
+# Ignorar logs e arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

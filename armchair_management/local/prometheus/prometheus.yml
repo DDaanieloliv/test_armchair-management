@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  external_labels:
+    monitor: 'codelab-monitor'
+
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - "/etc/prometheus/alerting-rules.yml"
+
+scrape_configs:
+
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+  - job_name: 'spring-boot-app'
+    scrape_interval: 5s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: "api-seatmanager"
+
+

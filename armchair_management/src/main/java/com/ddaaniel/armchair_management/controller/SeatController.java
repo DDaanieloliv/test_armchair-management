@@ -1,10 +1,11 @@
 package com.ddaaniel.armchair_management.controller;
 
-import com.ddaaniel.armchair_management.controller.service.ServicePessoa;
-import com.ddaaniel.armchair_management.controller.service.ServiceSeat;
-import com.ddaaniel.armchair_management.model.Seat;
-import com.ddaaniel.armchair_management.model.record.RecordDTO;
-import org.hibernate.mapping.Map;
+import com.ddaaniel.armchair_management.controller.service.implementation.ServicePersonImpl;
+import com.ddaaniel.armchair_management.controller.service.implementation.ServiceSeatImpl;
+import com.ddaaniel.armchair_management.model.record.MessageResponseDTO;
+import com.ddaaniel.armchair_management.model.record.RequestAllocationDTO;
+import com.ddaaniel.armchair_management.model.record.SeatResponseDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,47 +13,51 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/seats")
 public class SeatController {
 
-    @Autowired
-    private ServiceSeat serviceSeat;
+
+    private final ServiceSeatImpl serviceSeat;
+    private final ServicePersonImpl servicePessoa;
 
     @Autowired
-    private ServicePessoa servicePessoa;
+    public SeatController(ServiceSeatImpl serviceSeat, ServicePersonImpl servicePessoa) {
+        this.serviceSeat = serviceSeat;
+        this.servicePessoa = servicePessoa;
+    }
 
     // buscando os status de cada poltrona pela sua posição
     @GetMapping
-    public ResponseEntity<List<Seat>> getAllStatusPoltronas(){
+    public ResponseEntity<List<SeatResponseDTO>> getAllStatusPoltronas(){
         var response = serviceSeat.listStatusOfAllSeats();
         return ResponseEntity.ok().body(response);
     }
 
     // Buscando detalhes de uma poltrona específica pelo seu número de posição
     @GetMapping("/{position}")
-    public ResponseEntity<Seat> getBySeat(@PathVariable Integer position){
+    public ResponseEntity<SeatResponseDTO> getBySeat(@PathVariable Integer position){
         var response = serviceSeat.detailsFromSpecificSeat(position);
         return ResponseEntity.ok().body(response);
     }
 
     // Alocando uma poltrona para pessoa
     @PutMapping("/allocate")
-    public ResponseEntity<?> addPessoaToSeat (@RequestBody RecordDTO dto)  {
+    public ResponseEntity<?> addPessoaToSeat (@RequestBody RequestAllocationDTO dto)  {
         serviceSeat.allocateSeatToPessoa(dto.position(), dto.name(), dto.cpf());
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "Poltrona alocada com sucesso.");
-        return ResponseEntity.ok(response);
+
+        MessageResponseDTO message = new MessageResponseDTO("Poltrona alocada com sucesso.");
+        return ResponseEntity.ok(message);
     }
 
     // Removendo a relação de pessoa e poltrona e também removendo o registro da respectiva
-    // pessoa para não ficar acumulando no BD
+    // pessoa para não ficar acumulanda no BD
     @PutMapping("/remove/{position}")
     public ResponseEntity<?> removePessoaFromSeat(@PathVariable Integer position) {
-
         servicePessoa.removePessoaFromSeat(position);
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "Pessoa removida da Poltrona.");
-        return ResponseEntity.ok(response);
+
+        MessageResponseDTO message = new MessageResponseDTO("Pessoa removida da Poltrona.");
+        return ResponseEntity.ok(message);
     }
 }

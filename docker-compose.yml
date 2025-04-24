@@ -1,0 +1,57 @@
+services:
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - my_network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "mysql_db", "-u", "root", "--password=${MYSQL_ROOT_PASSWORD}" ]
+      interval: 20s
+      timeout: 15s
+      retries: 8
+
+  spring_app:
+    build: ./armchair_management
+    image: myapp
+    ports:
+      - 8080:8080
+    container_name: spring_app
+    restart: always
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - my_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 20s
+      timeout: 20s
+      retries: 8
+      start_period: 40s  # Aguarde 40s antes de rodar o primeiro healthcheck
+
+
+  ui-angular_app:
+    build: ./armchair-management-ui
+    image: ui-app
+    ports:
+      - 4200:80
+    container_name: ui-angular_app
+    restart: always
+    depends_on:
+      spring_app:
+        condition: service_healthy
+
+
+networks:
+  my_network:
+    driver: bridge

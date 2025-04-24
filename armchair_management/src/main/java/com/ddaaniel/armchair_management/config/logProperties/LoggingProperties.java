@@ -1,0 +1,25 @@
+package com.ddaaniel.armchair_management.config.logProperties;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Setter
+@Getter
+@Component
+@ConfigurationProperties(prefix = "logging.custom")
+public class LoggingProperties {
+
+    private LogFile app = new LogFile();
+    private LogFile audit = new LogFile();
+
+    @Setter
+    @Getter
+    public static class LogFile {
+        private String path;
+        private String pattern;
+        private int maxHistory;
+
+    }
+}

@@ -1,0 +1,47 @@
+groups:
+  - name: ApplicationAlerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instância {{ $labels.instance }} está fora do ar"
+          description: "{{ $labels.instance }} está inativa há mais de 30 segundos."
+
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[1m]) > 0.9
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de CPU alto na instância {{ $labels.instance }}"
+          description: "A CPU está sendo utilizada acima de 90% há mais de 1 minuto."
+
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / process_virtual_memory_bytes) > 0.8
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de memória alto na instância {{ $labels.instance }}"
+          description: "A memória está acima de 80% de uso há mais de 1 minuto."
+
+      - alert: Http500Errors
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[1m]) > 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Muitos erros 500 na instância {{ $labels.instance }}"
+          description: "A aplicação está retornando erros 5xx."
+
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[1m])) > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta latência nas requisições para {{ $labels.uri }}"
+          description: "A latência das requisições está acima de 1 segundo no 95º percentil."
