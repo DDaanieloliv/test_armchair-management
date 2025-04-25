@@ -91,7 +91,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     ports:
       - "3100:3100"
     volumes:
-      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
       - loki-data:/loki
     networks:
       - my_network

@@ -12,12 +12,15 @@ loki.write "default" {
 local.file_match "spring_logs" {
   path_targets = [
     {
-      path = "/app/log/app-*.log",
+      path = "/var/log/myapp/app-*.log"
     },
     {
-      path = "/app/log/audit-*.log",
+      path = "/var/log/myapp/audit-*.log"
     }
   ]
+}
 
+local.file_logging "send_to_loki" {
+  inputs     = [local.file_match.spring_logs.outputs]
   forward_to = [loki.write.default.receiver]
 }
