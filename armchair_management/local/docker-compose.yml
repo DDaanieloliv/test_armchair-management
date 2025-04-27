@@ -89,7 +89,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     container_name: loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"
     volumes:
       - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
       - loki-data:/loki
@@ -111,14 +111,14 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
 
 
 
-  spring_app: # Definimos o nome do serviço.
+  spring-app: # Definimos o nome do serviço.
     build:  # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
       context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
       dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
     image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
     ports:  # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
-      - 8080:8080
-    container_name: spring_app # "Settamos" o nome do container ao ser executado.
+      - "127.0.0.1:8080:8080"
+    container_name: spring-app # "Settamos" o nome do container ao ser executado.
     restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
     logging:
       driver: "json-file"
