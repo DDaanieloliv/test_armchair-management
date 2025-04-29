@@ -97,18 +97,19 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
 
-  alloy:
-    image: grafana/alloy:latest
-    container_name: alloy
+  # Promtail (envia os logs para o Loki)
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
     volumes:
-      - ../logs:/var/log/myapp
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
-    command: run /etc/alloy/config.alloy
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/promtail-config.yaml
     depends_on:
       - loki
     networks:
       - my_network
-
 
 
   spring-app: # Definimos o nome do serviço.

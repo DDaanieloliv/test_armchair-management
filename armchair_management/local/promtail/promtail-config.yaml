@@ -9,18 +9,13 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: spring-app-log
+  - job_name: docker
     static_configs:
-      - targets: [""]
+      - targets:
+          - localhost
         labels:
-          job: app-log
-          log_type: application
-          __path__: /app/log/app-*.log
-
-  - job_name: audit-log
-    static_configs:
-      - targets: [""]
-        labels:
-          job: audit-log
-          log_type: audit
-          __path__: /app/log/audit-*.log
+          job: docker
+          __path__: /var/lib/docker/containers/*/*.log
+          __docker_container_name__: spring-app
+    pipeline_stages:
+      - docker: {}
