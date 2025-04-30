@@ -1,3 +1,14 @@
+
+
+networks: # Terminada de definir os serviços que serão iniciados nesse docker-compose, usamos essa diretiva para definir quais redes usaremos nesse arquivo docker-compose.yml
+  my_network: # Definimos a criação de uma rede "my_network".
+    driver: bridge  # E "settamos" o drive de rede que ela usará.
+
+volumes:
+  grafana-storage:
+  loki-data:
+
+
 services: # Diretiva que indica que sob essa sessão definiremos containers.
   postgres_db: # Definimos o nome do serviço. Ou se preferir a chave do container.
     image: postgres:17.4-alpine3.21 # Definimos a Imagem sob a qual esse container será executado.
@@ -79,8 +90,8 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     ports:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
-    volumes:
-      - ./mailpit/data:/data
+    #volumes:
+    #  - /data
     networks:
       - my_network
 
@@ -102,14 +113,30 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     image: grafana/promtail:2.9.2
     container_name: promtail
     volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
+      - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml  # Mapeia seu arquivo de configuração local para o container.
+      - /var/run/docker.sock:/var/run/docker.sock # Permite que o Promtail se conecte ao daemon Docker. Para associar logs aos nomes dos containers (labels, nomes, etc).
     command: -config.file=/etc/promtail/promtail-config.yaml
     depends_on:
       - loki
     networks:
       - my_network
+
+# O Docker Daemon (também chamado de dockerd) é o processo que roda por trás do Docker no seu sistema.
+# Ele é quem:
+#
+#   - cria, inicia, para e remove containers, imagens, volumes, etc.
+#   - escuta requisições via uma API REST (por padrão, em um unix socket chamado docker.sock)
+#
+# Esse caminho (/var/run/docker.sock) é um arquivo especial chamado Unix Domain Socket.
+# Ele representa a porta de entrada da API do Docker Daemon.
+# Outros programas (como Promtail, Portainer, Docker Compose, etc.) usam esse "arquivo" para se
+# comunicar diretamente com o Docker Daemon, sem passar por rede.
+#
+# O Promtail usa esse socket para:
+#
+#    Consultar o daemon Docker e obter metadados dos containers ativos.
+#    Coletar nomes de containers, labels, ID, e outras informações que não estão nos arquivos de log.
 
 
   spring-app: # Definimos o nome do serviço.
@@ -126,8 +153,8 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       options:
         max-size: "10m"
         max-file: "5"
-    volumes:
-      - ../logs:/app/logs
+    #volumes:
+    #  - ../logs:/app/logs
     depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
       postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
         condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
@@ -142,11 +169,3 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     networks: # Associamos esse container com uma rede/s especifica.
       - my_network
 
-
-networks: # Terminada de definir os serviços que serão iniciados nesse docker-compose, usamos essa diretiva para definir quais redes usaremos nesse arquivo docker-compose.yml
-  my_network: # Definimos a criação de uma rede "my_network".
-    driver: bridge  # E "settamos" o drive de rede que ela usará.
-
-volumes:
-  grafana-storage:
-  loki-data:
