@@ -21,7 +21,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
-    #  - .env.local  # Definimos a "file" que obteremos no ligar do padrão.
+    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
     #command: --skip-name-resolve  # Utilizamos essa diretiva que nos permite comandos personalizados a respeito inicialização do container.
     networks: # Usamos essa diretiva para associar esse container a uma rede Docker.
       - my_network  # Explicitamos a qual rede/s esse container será associado.
@@ -96,7 +96,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
   loki:
-    image: grafana/loki:main
+    image: grafana/loki:latest
     container_name: loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
@@ -110,12 +110,12 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
 
   # Promtail (envia os logs para o Loki)
   promtail:
-    image: grafana/promtail:2.9.2
+    image: grafana/promtail:latest
     container_name: promtail
     volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro # /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
       - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml  # Mapeia seu arquivo de configuração local para o container.
-      - /var/run/docker.sock:/var/run/docker.sock # Permite que o Promtail se conecte ao daemon Docker. Para associar logs aos nomes dos containers (labels, nomes, etc).
+      #- /var/run/docker.sock:/var/run/docker.sock # Permite que o Promtail se conecte ao daemon Docker. Para associar logs aos nomes dos containers (labels, nomes, etc).
     command: -config.file=/etc/promtail/promtail-config.yaml
     depends_on:
       - loki
@@ -148,11 +148,6 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - "127.0.0.1:8080:8080"
     container_name: spring-app # "Settamos" o nome do container ao ser executado.
     restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     #volumes:
     #  - ../logs:/app/logs
     depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
@@ -165,7 +160,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
       HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
     #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
-    #  - .env.local  # Definimos a "file" que obteremos no ligar do padrão.
+    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
     networks: # Associamos esse container com uma rede/s especifica.
       - my_network
 

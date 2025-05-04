@@ -7,7 +7,6 @@ import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 import jakarta.annotation.PostConstruct;
-import net.logstash.logback.encoder.LogstashEncoder;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
@@ -38,22 +37,26 @@ public class LogbackConfig {
         appPolicy.setMaxHistory(loggingProperties.getApp().getMaxHistory());
         appPolicy.start();
 
-//        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-//        encoder.setContext(context);
-//        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss} [%level] [%thread] [traceId=%X{traceId}] [%logger{36}] %msg%n");
-//        encoder.start();
-
-//        appAppender.setRollingPolicy(appPolicy);
-//        appAppender.setEncoder(encoder);
-//        appAppender.start();
-
-        LogstashEncoder jsonEncoder = new LogstashEncoder();
-        jsonEncoder.setContext(context);
-        jsonEncoder.start();
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setContext(context);
+        encoder.setPattern("%d{HH:mm:ss}  service=Backend-API  level=%level  thread_name=%thread  traceId=%X{traceId}  logger=%logger{36}  message=%msg%n");
+        encoder.start();
 
         appAppender.setRollingPolicy(appPolicy);
-        appAppender.setEncoder(jsonEncoder);
+        appAppender.setEncoder(encoder);
         appAppender.start();
+
+//        LogstashEncoder jsonEncoder = new LogstashEncoder();
+//        jsonEncoder.setContext(context);
+//        jsonEncoder.setCustomFields("{\"app\":\"armchair-management\"}");
+//        jsonEncoder.setIncludeStructuredArguments(true);
+//        jsonEncoder.setIncludeMdc(true);
+//        jsonEncoder.start();
+
+
+//        appAppender.setRollingPolicy(appPolicy);
+//        appAppender.setEncoder(jsonEncoder);
+//        appAppender.start();
 
         // === AUDIT LOG ===
         RollingFileAppender<ILoggingEvent> auditAppender = new RollingFileAppender<>();
@@ -67,27 +70,27 @@ public class LogbackConfig {
         auditPolicy.setMaxHistory(loggingProperties.getAudit().getMaxHistory());
         auditPolicy.start();
 
-//        PatternLayoutEncoder auditEncoder = new PatternLayoutEncoder();
-//        auditEncoder.setContext(context);
-//        auditEncoder.setPattern("%d{yyyy-MM-dd HH:mm:ss} [%level] [%thread] [traceId=%X{traceId}] [AUDIT] %msg%n");
-//        auditEncoder.start();
-//
-//        auditAppender.setRollingPolicy(auditPolicy);
-//        auditAppender.setEncoder(auditEncoder);
-//        auditAppender.start();
-
-        LogstashEncoder auditEncoder = new LogstashEncoder();
+        PatternLayoutEncoder auditEncoder = new PatternLayoutEncoder();
         auditEncoder.setContext(context);
+        auditEncoder.setPattern("%d{yyyy-MM-dd HH:mm:ss} level=%level  thread_name=%thread  traceId=%X{traceId}  [AUDIT]  message%msg%n");
         auditEncoder.start();
 
         auditAppender.setRollingPolicy(auditPolicy);
         auditAppender.setEncoder(auditEncoder);
         auditAppender.start();
 
+//        LogstashEncoder auditEncoder = new LogstashEncoder();
+//        auditEncoder.setContext(context);
+//        auditEncoder.start();
+//
+//        auditAppender.setRollingPolicy(auditPolicy);
+//        auditAppender.setEncoder(auditEncoder);
+//        auditAppender.start();
+
         // === CONSOLE ===
         ConsoleAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
         consoleAppender.setContext(context);
-        consoleAppender.setEncoder(jsonEncoder);
+        consoleAppender.setEncoder(encoder);
         //consoleAppender.setEncoder(encoder);
         consoleAppender.start();
 
