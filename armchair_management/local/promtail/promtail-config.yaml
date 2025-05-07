@@ -19,7 +19,10 @@ scrape_configs:
           team: DevOps
           env: Prod
     pipeline_stages:
-      - regex:
-          expression: '.*service=(?P<service>[^\s]+).*'
-      - labels:
-          service:
+      - match:
+          selector: '{job="docker-logs"} |= "service="'
+          stages:
+            - regex:
+                expression: '.*service=(?P<service>[^\s]+).*'
+            - labels:
+                service:

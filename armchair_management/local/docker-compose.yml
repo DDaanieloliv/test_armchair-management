@@ -1,5 +1,4 @@
 
-
 networks: # Terminada de definir os serviços que serão iniciados nesse docker-compose, usamos essa diretiva para definir quais redes usaremos nesse arquivo docker-compose.yml
   my_network: # Definimos a criação de uma rede "my_network".
     driver: bridge  # E "settamos" o drive de rede que ela usará.
@@ -34,16 +33,17 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    ports:
-      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
+    network_mode: "host"  # 👈 ADICIONE ESTA LINHA
+#    ports:
+#      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.external-url=http://localhost:9090'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
-    networks:
-      - my_network
+#    networks:
+#      - my_network
 
   grafana:
     image: grafana/grafana:latest
@@ -108,6 +108,16 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
 
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+    ports:
+      - "4320:4320"
+    networks:
+      - my_network
+
   # Promtail (envia os logs para o Loki)
   promtail:
     image: grafana/promtail:latest
@@ -122,45 +132,57 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     networks:
       - my_network
 
-# O Docker Daemon (também chamado de dockerd) é o processo que roda por trás do Docker no seu sistema.
-# Ele é quem:
-#
-#   - cria, inicia, para e remove containers, imagens, volumes, etc.
-#   - escuta requisições via uma API REST (por padrão, em um unix socket chamado docker.sock)
-#
-# Esse caminho (/var/run/docker.sock) é um arquivo especial chamado Unix Domain Socket.
-# Ele representa a porta de entrada da API do Docker Daemon.
-# Outros programas (como Promtail, Portainer, Docker Compose, etc.) usam esse "arquivo" para se
-# comunicar diretamente com o Docker Daemon, sem passar por rede.
-#
-# O Promtail usa esse socket para:
-#
-#    Consultar o daemon Docker e obter metadados dos containers ativos.
-#    Coletar nomes de containers, labels, ID, e outras informações que não estão nos arquivos de log.
 
-
-  spring-app: # Definimos o nome do serviço.
-    build:  # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
-      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
-      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
-    image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
-    ports:  # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
-      - "127.0.0.1:8080:8080"
-    container_name: spring-app # "Settamos" o nome do container ao ser executado.
-    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
-    #volumes:
-    #  - ../logs:/app/logs
-    depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
-      postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
-        condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
-    environment: # Explicitamos que queremos passar variáveis de ambiente para a Imagem desse container. E as definimos.
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
-      HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
-    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
-    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
-    networks: # Associamos esse container com uma rede/s especifica.
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo.yml
+    ports:
+      - "3200:3200"     # tempo http UI
+      - "4317:4317"     # OTLP gRPC
+#      - "4318:4318"     # OTLP HTTP
+#      - "14268:14268"   # Jaeger ingest
+    networks:
       - my_network
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: collector
+    volumes:
+      - ./collector/otel-collector.yaml:/etc/otelcol/config.yaml
+    command: [ "--config=/etc/otelcol/config.yaml" ]
+    ports:
+      - "4318:4318"  # OTLP HTTP receiver
+    depends_on:
+      - tempo
+    networks:
+      - my_network
+
+
+#  spring-app: # Definimos o nome do serviço.
+#    build:  # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
+#      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
+#      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
+#    image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
+#    ports:  # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
+#      - "127.0.0.1:8080:8080"
+#    container_name: spring-app # "Settamos" o nome do container ao ser executado.
+#    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
+#    #volumes:
+#    #  - ../logs:/app/logs
+#    depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
+#      postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
+#        condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
+#    environment: # Explicitamos que queremos passar variáveis de ambiente para a Imagem desse container. E as definimos.
+#      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+#      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+#      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+#      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+#      HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
+#    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
+#    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
+#    networks: # Associamos esse container com uma rede/s especifica.
+#      - my_network
 

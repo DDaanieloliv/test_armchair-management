@@ -60,7 +60,7 @@ RUN mvn clean package
 #   garantindo estabilidade e compatibilidade.
 #
 # Essa abordagem ajuda a **reduzir o tamanho da imagem final**, melhorando a performance e diminuindo o
-# consumo de recursos.FROM eclipse-temurin:21-jre-jammy
+# consumo de recursos.
 FROM eclipse-temurin:22-jre-jammy
 
 # Definimos o diretório onde os seguintes comandos serão executados.
@@ -80,11 +80,14 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Esse arquivo é copiado para 'app.jar' na imagem final, garantindo
 # que apenas o artefato compilado esteja presente, tornando a imagem mais leve.
 COPY --from=builder /app/target/*.jar app.jar
+COPY opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 
 # Por reazões de documentação definimos a porta em que a execuçõa dessa imagem irá rodar.
 EXPOSE 8080
 
 # Utilizamos so comandos referentes a Imagem final que definimos, para executarmos
 # a imagem de nossa aplicação.
-CMD ["java", "-jar", "app.jar"]
+#CMD ["java", "-jar", "app.jar"]
+
+CMD ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-Dotel.traces.exporter=logging" , "-jar", "app.jar"]
 
