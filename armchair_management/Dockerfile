@@ -80,11 +80,23 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Esse arquivo é copiado para 'app.jar' na imagem final, garantindo
 # que apenas o artefato compilado esteja presente, tornando a imagem mais leve.
 COPY --from=builder /app/target/*.jar app.jar
+
+# Copiamos o .jar, responsavel pela Telemetria para dentro de um arquivo .jar
+# dentro do WORDIR que definimos.
 COPY opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 
-
-# Variáveis de ambiente do OpenTelemetry
+# JAVA_TOOL_OPTIONS é uma variável de ambiente reconhecida pela JVM (Java Virtual Machine).
+# A JVM aplica automaticamente os argumentos definidos em JAVA_TOOL_OPTIONS, sem que seja
+# necessário incluí-los manualmente no comando 'java'.
+#
+# Isso elimina a necessidade de especificar a flag '-javaagent' diretamente no nosso comando
+# 'CMD ["java", "-jar", "app.jar"]'.
+#
+# O uso da variável JAVA_TOOL_OPTIONS equivale a executar a aplicação com o seguinte comando:
+# java -javaagent:/app/opentelemetry-javaagent.jar -jar app.jar
 ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
+
+# Variáveis de ambiente do OpenTelemetry.
 ENV OTEL_SERVICE_NAME=seatManager-API
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
 ENV OTEL_METRICS_EXPORTER=none
