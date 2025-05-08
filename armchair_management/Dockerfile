@@ -82,6 +82,15 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/*.jar app.jar
 COPY opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 
+
+# Variáveis de ambiente do OpenTelemetry
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
+ENV OTEL_SERVICE_NAME=seatManager-API
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+ENV OTEL_METRICS_EXPORTER=none
+ENV OTEL_LOGS_EXPORTER=none
+ENV OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+
 # Por reazões de documentação definimos a porta em que a execuçõa dessa imagem irá rodar.
 EXPOSE 8080
 
@@ -89,5 +98,5 @@ EXPOSE 8080
 # a imagem de nossa aplicação.
 #CMD ["java", "-jar", "app.jar"]
 
-CMD ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-Dotel.traces.exporter=logging" , "-jar", "app.jar"]
+CMD ["java", "-jar", "app.jar"]
 

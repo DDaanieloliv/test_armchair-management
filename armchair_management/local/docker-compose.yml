@@ -9,6 +9,52 @@ volumes:
 
 
 services: # Diretiva que indica que sob essa sessão definiremos containers.
+
+
+
+  spring-app: # Definimos o nome do serviço.
+    build: # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
+      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
+      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
+    image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
+    ports: # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
+      - "8080:8080"
+    container_name: spring-app # "Settamos" o nome do container ao ser executado.
+    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
+    #volumes:
+    #  - ../logs:/app/logs
+    depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
+      postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
+        condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
+    environment: # Explicitamos que queremos passar variáveis de ambiente para a Imagem desse container. E as definimos.
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+      HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
+    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
+    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
+    networks: # Associamos esse container com uma rede/s especifica.
+      - my_network
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    #    network_mode: "host"  # 👈 ADICIONE ESTA LINHA
+    ports:
+      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=http://localhost:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
+    networks:
+      - my_network
+
+
+
   postgres_db: # Definimos o nome do serviço. Ou se preferir a chave do container.
     image: postgres:17.4-alpine3.21 # Definimos a Imagem sob a qual esse container será executado.
     ports:  # Diretiva tem função de expor e mapear portas entre host e containers.
@@ -30,34 +76,6 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       timeout: 5s # Tempo limite para execução do test antes de ser considerado falha.
       retries: 5  # Número limite de falhas aceitas antes do container ser considerado unhealthy.
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    network_mode: "host"  # 👈 ADICIONE ESTA LINHA
-#    ports:
-#      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.external-url=http://localhost:9090'
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
-#    networks:
-#      - my_network
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "127.0.0.1:3000:3000" # Grafana vai rodar na porta 3000
-    env_file:
-      - ./grafana/grafana.env.local
-    networks:
-      - my_network
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    depends_on:
-      - loki
 
   postgres_exporter:
     image: bitnami/postgres-exporter
@@ -70,6 +88,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - postgres_db
     networks:
       - my_network
+
 
   alertmanager:
     image: prom/alertmanager
@@ -95,18 +114,6 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     networks:
       - my_network
 
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    command: -config.file=/etc/loki/local-config.yaml
-    ports:
-      - "127.0.0.1:3100:3100"
-    volumes:
-      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
-      - loki-data:/loki
-    networks:
-      - my_network
-
 
   alloy:
     image: grafana/alloy:latest
@@ -114,9 +121,10 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
     ports:
-      - "4320:4320"
+      - "127.0.0.1:4320:4320"
     networks:
       - my_network
+
 
   # Promtail (envia os logs para o Loki)
   promtail:
@@ -133,56 +141,66 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
 
-  tempo:
-    image: grafana/tempo:latest
-    container_name: tempo
-    command: [ "-config.file=/etc/tempo.yml" ]
-    volumes:
-      - ./tempo/tempo.yml:/etc/tempo.yml
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "3200:3200"     # tempo http UI
-      - "4317:4317"     # OTLP gRPC
-#      - "4318:4318"     # OTLP HTTP
-#      - "14268:14268"   # Jaeger ingest
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki-data:/loki
     networks:
       - my_network
 
-  otel-collector:
-    image: otel/opentelemetry-collector:latest
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.97.0
     container_name: collector
     volumes:
       - ./collector/otel-collector.yaml:/etc/otelcol/config.yaml
     command: [ "--config=/etc/otelcol/config.yaml" ]
     ports:
-      - "4318:4318"  # OTLP HTTP receiver
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+      - "127.0.0.1:8888:8888"   # Metrics/debug
     depends_on:
       - tempo
     networks:
       - my_network
 
 
-#  spring-app: # Definimos o nome do serviço.
-#    build:  # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
-#      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
-#      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
-#    image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
-#    ports:  # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
-#      - "127.0.0.1:8080:8080"
-#    container_name: spring-app # "Settamos" o nome do container ao ser executado.
-#    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
-#    #volumes:
-#    #  - ../logs:/app/logs
-#    depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
-#      postgres_db: # Com o nome / chave do serviço, nos explicitamos que há uma dependência entre o serviço atual e o mysql_db.
-#        condition: service_healthy # Settamos a condição que o torna dependente do container mysql_db, para service_healthy.
-#    environment: # Explicitamos que queremos passar variáveis de ambiente para a Imagem desse container. E as definimos.
-#      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-#      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-#      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
-#      HIBERNATE_DIALECT: ${HIBERNATE_DIALECT}
-#    #env_file: # Como não iremos usar a "file" automáticamente identificada pelo Docker (.env) usamos essa diretiva que nos permite explicitar de onde obteremos essa nova "file".
-#    #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
-#    networks: # Associamos esse container com uma rede/s especifica.
-#      - my_network
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "127.0.0.1:3200:3200"     # tempo http UI
+    networks:
+      - my_network
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "127.0.0.1:3000:3000" # Grafana vai rodar na porta 3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=${GF_AUTH_ANONYMOUS_ENABLED}
+    networks:
+      - my_network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - loki
+
+
+
+
+
 
