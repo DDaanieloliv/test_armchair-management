@@ -53,7 +53,7 @@ docker compose up -d
 Impl-Observability/
 │
 ├── armchair_management/                 # Backend (Java, com observabilidade)
-│   ├── collection/                      # (não detalhado - talvez recursos adicionais)
+│   ├── collection/                      # Requisições exemplo
 │   ├── Dockerfile                       # Docker para o backend
 │   ├── local/                           # Stack de observabilidade local
 │   │   ├── alertmanager/
