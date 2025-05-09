@@ -52,19 +52,21 @@ docker compose up -d
 
 Este repositório tem fins educacionais e demonstrativos. Não é indicado o uso direto desta configuração em ambientes de produção sem as devidas adaptações de segurança, autenticação e escalabilidade.
 
+<br>
 
-### 🤝 Contribuições
+- ### 🤝 Contribuições
 
 Sinta-se à vontade para abrir issues ou merge requests. Feedbacks são bem-vindos!
 
+<br>
 
-
-### 📄 Licença
+- ### 📄 Licença
 
 Este projeto está licenciado sob a MIT License.
 
+<br>
 
-### 👨‍💻 Autor
+- ### 👨‍💻 Autor
 
 Daniel Oliveira – @DDaanieloliv
 
