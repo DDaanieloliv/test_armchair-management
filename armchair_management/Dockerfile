@@ -97,6 +97,9 @@ COPY opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
 
 # Variáveis de ambiente do OpenTelemetry.
+# Essas variáveis de ambiente ficam disponíveis no ambiente de execução do container. A JVM,
+# ao iniciar com o agente (-javaagent), herda essas variáveis automaticamente do ambiente, não
+# sendo necessário o uso do das flags -D ( Nesse caso ).
 ENV OTEL_SERVICE_NAME=seatManager-API
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
 ENV OTEL_METRICS_EXPORTER=none

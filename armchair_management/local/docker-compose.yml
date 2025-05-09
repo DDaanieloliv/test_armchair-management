@@ -200,7 +200,16 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - loki
 
 
-
+  ui-angular_app:
+    build: ../../armchair-management-ui
+    image: ui-app
+    ports:
+      - "4200:80"
+    container_name: ui-angular_app
+    restart: always
+    depends_on:
+      spring_app:
+        condition: service_healthy
 
 
 
