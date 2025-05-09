@@ -40,17 +40,64 @@ git clone https://github.com/DDaanieloliv/Docker-.git
 ### Executando projeto
 
 ```bash
-cd Impl-Observability/armchair_management/local/
-
+cd /Impl-Observability/armchair_management/local/
 docker compose up -d 
 ```
 
 <br>
+
+
+### Estrutura do projeto:
+
+```
+Impl-Observability/
+│
+├── armchair_management/                 # Backend (Java, com observabilidade)
+│   ├── collection/                      # (não detalhado - talvez recursos adicionais)
+│   ├── Dockerfile                       # Docker para o backend
+│   ├── local/                           # Stack de observabilidade local
+│   │   ├── alertmanager/
+│   │   ├── alloy/
+│   │   ├── collector/
+│   │   ├── docker-compose.yml           # Composição dos serviços de observabilidade
+│   │   ├── env-file.model
+│   │   ├── loki/
+│   │   ├── prometheus/
+│   │   ├── promtail/
+│   │   └── tempo/
+│   ├── mvnw, mvnw.cmd                   # Wrappers do Maven
+│   ├── opentelemetry-javaagent.jar      # Instrumentação para observabilidade
+│   ├── pom.xml                          # Configuração do projeto Maven
+│   └── src/
+│       ├── main/                        # Código-fonte principal
+│       └── test/                        # Testes
+│
+├── armchair-management-ui/             # Frontend (Angular)
+│   ├── Dockerfile                       # Docker para frontend
+│   ├── angular.json                     # Configuração Angular
+│   ├── mime.types                       # Tipos MIME customizados
+│   ├── nginx.conf                       # Configuração para servir com Nginx
+│   ├── package.json / package-lock.json# Dependências
+│   ├── README_front-end.md              # Instruções do frontend
+│   ├── tsconfig*.json                   # Configurações TypeScript
+│   └── src/
+│       ├── app/                         # Componentes e módulos Angular
+│       ├── assets/                      # Recursos estáticos
+│       ├── environments/                # Configs de ambiente Angular
+│       ├── index.html                   # HTML principal
+│       ├── main.ts                      # Bootstrap Angular
+│       ├── main.server.ts               # SSR (Angular Universal)
+│       ├── server.ts                    # Servidor para SSR
+│       └── styles.css                   # Estilos globais
+│
+├── docker-compose.yml                  # Orquestração principal do projeto
+├── env.model                           # Modelo de variáveis de ambiente
+├── LICENSE
+└── README.md                           # Instruções gerais do projeto
+```
+
+
 <br>
-
-### Aviso
-
-Este repositório tem fins educacionais e demonstrativos. Não é indicado o uso direto desta configuração em ambientes de produção sem as devidas adaptações de segurança, autenticação e escalabilidade.
 
 <br>
 
@@ -72,6 +119,8 @@ Daniel Oliveira – @DDaanieloliv
 
 [Linkedin - Daniel Oliveira](https://www.linkedin.com/in/daniel-oliveira-aba552251/)
 
+<br>
+<br>
 
 ## Ferramentas de Observabilidade abordadas:
 
