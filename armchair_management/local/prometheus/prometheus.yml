@@ -1,24 +1,40 @@
-global:
-  scrape_interval: 15s
+global: # Specifies parameters that are valid in all other configuration contexts.
+  scrape_interval: 15s   # How frequently to scrape targets by default.
   external_labels:
     monitor: 'codelab-monitor'
+    # The labels to add to any time series or alerts when communicating with
+    # external systems (federation, remote storage, Alertmanager).
+    # Environment variable references `${var}` or `$var` are replaced according
+    # to the values of the current environment variables.
+    # References to undefined variables are replaced by the empty string.
+    # The `$` character can be escaped by using `$$`.
 
-
+# Alerting specifies settings related to the Alertmanager.
 alerting:
   alertmanagers:
-    - static_configs:
+    - static_configs: # List of labeled statically configured Alertmanagers.
         - targets: ['alertmanager:9093']
+    # A static_config allows specifying a list of targets and a common label
+    # set for them. It is the canonical way to specify static targets in a scrape configuration.
 
+# Rule files specifies a list of globs. Rules and alerts are read from
+# all matching files.
 rule_files:
   - "/etc/prometheus/alerting-rules.yml"
 
-scrape_configs:
 
+# A scrape_config section specifies a set of targets and parameters describing how to scrape
+# them. In the general case, one scrape configuration specifies a single job. In advanced
+# configurations, this may change.
+scrape_configs:
   - job_name: 'postgres-exporter'
+    # List of labeled statically configured targets for this job.
     static_configs: # Where the exporter is.
       - targets: ['postgres_exporter:9187']
 
   - job_name: 'prometheus'
+    # Per-scrape timeout when scraping this job.
+    # It cannot be greater than the scrape interval.
     scrape_interval: 5s
     static_configs: # Where the exporter is.
       - targets: ['prometheus:9090']
@@ -26,10 +42,18 @@ scrape_configs:
 
   - job_name: 'spring-boot-app'
     scrape_interval: 5s
+    # The HTTP resource path on which to fetch metrics from targets.
     metrics_path: /actuator/prometheus
+    # List of labeled statically configured targets for this job.
     static_configs: # Where the exporter is.
       - targets: ['spring-app:8080']
         labels:
           application: "api-seatmanager"
 
-
+# The targets specified by the static config.
+#targets:
+#  [ - '<host>' ]
+#
+# Labels assigned to all metrics scraped from the targets.
+#labels:
+#  [ <labelname>: <labelvalue> ... ]
