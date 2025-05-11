@@ -1,14 +1,18 @@
-groups:
-  - name: ApplicationAlerts
-    rules:
+groups: # A list of alert groups. Grouping rules helps organize alerts logically, often by service or component.
+  - name: ApplicationAlerts # Nome do grupo de alertas, indicando que ele contém regras relacionadas ao comportamento de uma aplicação.
+    rules: # Lista de regras de alerta individuais que pertencem a este grupo. Cada regra define uma condição específica que será monitorada.
       - alert: InstanceDown
-        expr: up == 0
-        for: 30s
+        expr: up == 0 # Expressão PromQL que define a condição do alerta. Caso ela permaneça verdadeira durante o tempo especificado em 'for', o alerta muda para o estado FIRING.
+        for: 30s  # Duração mínima que a condição deve permanecer verdadeira antes que o alerta seja ativado (FIRING).
         labels:
           severity: critical
         annotations:
           summary: "Instância {{ $labels.instance }} está fora do ar"
           description: "{{ $labels.instance }} está inativa há mais de 30 segundos."
+        # Custom labels attached to the alert. Commonly used for categorizing alerts (e.g., by
+        # severity, team, environment).
+        # The annotations can provide Textual descriptions used in notifications. Supports
+        # templating with {{ $labels.instance }} for dynamic message content.
 
       - alert: HighCPUUsage
         expr: rate(process_cpu_seconds_total[1m]) > 0.9
@@ -45,3 +49,7 @@ groups:
         annotations:
           summary: "Alta latência nas requisições para {{ $labels.uri }}"
           description: "A latência das requisições está acima de 1 segundo no 95º percentil."
+
+
+# Alerting rules allow you to define alert conditions based on Prometheus expression language
+# expressions and to send notifications about firing alerts to an external service.

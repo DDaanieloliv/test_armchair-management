@@ -1,17 +1,25 @@
 global:
-  smtp_smarthost: 'mailpit:1025'
-  smtp_from: 'alertas@sistema.local'
+  # The default SMTP smarthost used for sending emails, including port number.
+  # Port number usually is 25, or 587 for SMTP over TLS (sometimes referred to as STARTTLS).
+  # Example: smtp.example.org:587
+  smtp_smarthost: 'mailpit:1025' # The alert goes to that SMTP server .
+  smtp_from: 'alertas@sistema.local'   # The default SMTP From header field.
   smtp_require_tls: false
 
+# A route block defines a node in a routing tree and its children. Its optional configuration
+# parameters are inherited from its parent node if not set.
 route:
   receiver: email-alerts
   group_wait: 10s
   group_interval: 30s
   repeat_interval: 1h
 
+# A list of notification receivers.
 receivers:
-  - name: email-alerts
+  - name: email-alerts # The unique name of the receiver.
     email_configs:
+      # The email address to send notifications to.
+      # Allows a comma separated list of rfc5322 compliant email addresses.
       - to: 'admin@sistema.local'
-        from: 'alertas@sistema.local'
-        send_resolved: true
+        from: 'alertas@sistema.local' # The sender's address.
+        send_resolved: true # Whether to notify about resolved alerts.
