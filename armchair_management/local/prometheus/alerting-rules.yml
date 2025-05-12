@@ -13,6 +13,8 @@ groups: # A list of alert groups. Grouping rules helps organize alerts logically
         # severity, team, environment).
         # The annotations can provide Textual descriptions used in notifications. Supports
         # templating with {{ $labels.instance }} for dynamic message content.
+        # The variable {{ $labels.instance }} comes from the time series data returned by
+        # the PromQL expression.
 
       - alert: HighCPUUsage
         expr: rate(process_cpu_seconds_total[1m]) > 0.9
