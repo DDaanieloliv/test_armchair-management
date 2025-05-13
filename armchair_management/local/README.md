@@ -430,3 +430,433 @@ if you want to send to multiple remote Loki instances.
 > Prometheus SCRAPE_CONFIGS. Isso significa que, se você já possui uma instância 
 > de Prometheus, a configuração será muito semelhante.
 
+<br>
+
+- **job_name:**
+
+> Define o nome que identifica a respectiva configuração de 'scrape' no Promtail UI.
+
+<br>
+
+
+- **labels:**
+
+> Nos permite atribuirmos rótulos estáticos ao read file em questão.
+
+<br>
+
+
+- **pipiline_stages:**
+
+> São usadas para transformar as entradas de logs e a suas labels.
+> A pipeline é executada depois do discovery process terminar.
+> Essa diretiva consiste numa lista de estágios que correspondem a itens como
+> regex e json para extrair data from logs geralmente. Esses dados extraídos
+> são transformados num mapa de objetos temporários. Esses dados podem ser usados 
+> pelo Promtail, por exemplo, como valores para labels e outputs.   
+
+<br>
+
+
+- **match:**
+
+> O estágio 'match' condicionalmente executam um conjunto de estágios quando a entrada de logs 
+> der match com a LogQL 'stream selector'.
+
+<br>
+
+
+- **selector:**
+
+> Diretiva que avalia se a entrada de log match com a string LogQL definida nela.
+> E caso true o entry log irá passar pelos seguintes estágios pipeline.
+> Estágios esses que podem ser `- [ <docker> | <cri> | <regex> | <json> | <template> |
+> <match> | <timestamp> | <output> | <labels> | <metrics> ]` .
+
+<br>
+
+
+- **stages:**
+
+> Define um consjunto aninhado de pipeline stages apenas se o selector matches
+> com as labels dos logs entries.
+
+<br>
+
+
+- **regex:**
+
+> Esse estágio 'regex' leva uma expressão regular para matches com grupos presentes nos logs entries.
+> E captura nomes de grupos extraídos conforme a diretiva 'expression', para serem usados em outros estágios.
+
+<br>
+
+
+- **expression:**
+
+> Define a RE2 regular expression que cada grupo de captura deve ser nomeado.
+
+<br>
+
+
+- **labels:**
+
+> O estágios 'labels' apanha data do mapa de objetos estraídos e configura 
+> 'labels' adicionais no log entry que irá ser enviado para o Loki.
+> Podendo ser definido assim `[ <string>: [<string>] ... ]`.
+> Chave e o nome é requerido para a 'label' que irá ser criada.
+> O valor é opcional e será o nome do dado extraído cujo valor será usado para
+> o valor da 'label'. Caso vazio o valor que será inferido será o mesmo que a Chave.
+
+<br>
+
+<br>
+
+
+## _**loki-config.yaml**_
+
+
+```YAML
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+  max_transfer_retries: 0
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/boltdb-cache
+    cache_ttl: 24h
+  filesystem:
+    directory: /loki/chunks
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+
+chunk_store_config:
+  max_look_back_period: 0s
+
+table_manager:
+  retention_deletes_enabled: false
+  retention_period: 0s
+```
+
+<br>
+
+### Syntax;
+
+<br>
+
+
+- **auth_enabled:**
+
+> Ativa autenticação através do X-Scope-OrgID header, que deve está presente caso 
+> essa diretiva seja definida como true. Se falso, o OrgID será sempre definido como 'fake'.
+> CLI flag: -auth.enabled
+
+<br>
+
+
+- **server:**
+
+> Configura o servidor do módulo lançado.
+
+<br>
+
+
+- **ingester:**
+
+> O bloco 'ingester' configura o 'ingester' e como ele irpa registrar a si para um armazenamento
+> chave, valor. O "ingester" no Loki é o componente crucial que recebe e processa os dados de 
+> log enviados pelos agentes de coleta, como Promtail ou Fluentd. Ele atua como um intermediário, 
+> compactando os dados de log e preparando-os para o armazenamento.
+> Essa secção configura como Loki recebe buffers e armazena logs temporariamente
+> antes deles serem flushed to armazenamento permanente.
+
+<br>
+
+
+- **schema_config:**
+
+> Configura o esquema de índice da chunk e onde é armazenado.
+> Configura como os logs são indexados e armazenados, over time.
+
+<br>
+
+
+- **storage_config:**
+
+> O bloco 'storage_config' configura um de muitos stores possíveis para both index e chunks.
+> Com a configuração a ser escolhida devendo ser definida no bloco de schema_config.
+
+<br>
+
+
+- **limits_config:**
+
+> Esse bloco configura um limite global e por inquilino no Loki. 
+> Os valores aqui podem ser substituidos nas 'overrides' section of the runtime_config file. 
+
+<br>
+
+
+- **table_manager:**
+
+> O bloco Table_Manager configura o gerenciador de tabela para retenção.
+> No Grafana Loki, o Table Manager é um componente responsável por gerir as tabelas onde 
+> os logs são armazenados. Ele cria tabelas periódicas antes do início do seu período de tempo e as 
+> apaga quando os seus dados excedem o período de retenção. Essencialmente, o Table Manager 
+> implementa a retenção de dados, apagando tabelas inteiras que contenham dados mais antigos 
+> que o período de retenção especificado, conforme a documentação da Grafana. [https://grafana.com/docs/loki/latest/operations/storage/table-manager/]
+
+<br>
+
+
+- **chunk_store_config:**
+
+> Esse bloco configura como as chunks irão ser cacheadas e how long esperar antes de salvar elas
+> to the backing store.
+
+<br>
+
+<br>
+
+
+## _**tempo.yaml**_
+
+```YAML
+auth_enabled: false
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+        http:
+
+ingester:
+  trace_idle_period: 10s
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    compaction_window: 1h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo
+    wal:
+      path: /tmp/tempo/wal
+```
+
+<br>
+
+### Syntax;
+
+<br>
+
+- **http_listen_port:**
+
+> HTTP server listen port.
+
+<br>
+
+
+- **distributor:**
+
+> Define as configurações do bloco distributor.
+> O 'distributor' recebe os spans e dispachaos ao ingester apropriado.
+> Ou seja, definimos como o tempo recebe as traces.
+> E a diretiva 'oltp' especifica o suporte para 'OpenTelemetry Protocol'
+> sob so protocolos 'grpc' e 'http'. 
+
+<br>
+
+
+- **receivers:**
+
+> Define as configurações para diferentes protocolos.
+> Essas configurações são passadas para os receptores definidos.
+
+<br>
+
+
+- **ingester:**
+
+> O ingester é responsavel por lidar com traces e pushing them para TempoDB.
+> Esse bloco controla como as traces são grouped e flushed to storage.
+
+<br>
+
+
+- **trace_idle_period:**
+
+> Define a quantidade de tempo um rastreamento deve estar ocioso antes de libertá-lo para o Wal.
+
+<br>
+
+
+- **max_block_duration:**
+
+> Define o máximo de tempo antes de cortar um bloco
+
+<br>
+
+
+- **compactor:**
+
+> O compactador no Grafana Tempo tem a função de otimizar o armazenamento e o acesso a dados de rastreamento distribuído, reduzindo o número de blocos e, consequentemente, o espaço utilizado. Ele faz isso transmitindo blocos de e para o armazenamento de backend, agindo como um mecanismo de compactação para garantir que os dados sejam armazenados de forma eficiente. 
+> O compactor stream blocos do backend de armazenamento, combin-os e os escreve de volta.
+> Controla a otimização de dados de trace ao longo do tempo.
+
+<br>
+
+
+- **storage:**
+
+> Esse bloco configura como serão armazenamento para as traces.
+> Ou seja, configuramos como e onde o Grafana Tempo armazena as traces.
+
+<br>
+
+<br>
+
+## _**otel-collector.yaml**_
+
+```YAML
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]
+```
+
+<br>
+
+### Syntax;
+
+<br>
+
+
+- **receivers:**
+
+> Essa secção define como o Colletor recebe telemetry data.
+
+<br>
+
+
+- **exporters:**
+
+> Esse bloco define para onde o Collector envia os dados após recebe-los.
+> Nele explicitamos que estamos a usar o 'oltp' exporter, fundamental para forward data para 
+> outro sistema compatível com OLTP.
+exporters:
+<br>
+
+
+- **service:**
+
+> Nessa secção definimos como telemetry flows através do Collector.
+> Nos permitindo definir a pipeline para trace data (tambem podendo ter usado para métricas e/ou logs).
+> Seu pipeline acabo por conectar OLTP receiver ao OLTP exporter, no nosso caso (receive trace data → send to Tempo).
+
+<br>
+
+<br>
+
+
+___
+
+
+### _**De adordo com Grafana Labs:**_
+
+> Promtail has been deprecated and is in Long-Term Support (LTS) through February 28, 2026. Promtail will reach an End-of-Life (EOL) on March 2, 2026.
+
+
+Para isso temos como recurso de migração ou alternativo o Grafana alloy.
+
+<br>
+
+<br>
+
+
+## Grafana Alloy - _**config.alloy**_
+
+
+- Por agora apenas esse exemplo utilizando traces:
+
+```alloy
+logging {
+  level  = "debug"
+  format = "logfmt"
+}
+
+otelcol.receiver.otlp "default" {
+  http {
+    endpoint="0.0.0.0:4320"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    traces  = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+    client {
+        endpoint = "http://tempo:4318"
+        tls {
+            insecure             = true
+            insecure_skip_verify = true
+        }
+    }
+}
+```
+
+More details comming soon !
