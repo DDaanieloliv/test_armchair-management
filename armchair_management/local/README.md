@@ -226,7 +226,7 @@ groups:
 - **annotations:**
 
 > Essa diretiva provê descrições textuais usadas em notificações. Suportando "templating" com 
-> {{ $labels.instance }} para mensagens com contexto dinâmico. As variáveis {{ $labels.instance }}
+> `{{ $labels.instance }}` para mensagens com contexto dinâmico. As variáveis `{{ $labels.instance }}`
 > vem dos dados de séries temporais retornados pela expressão PromQL.
 
 <br>
@@ -330,3 +330,103 @@ receivers:
 - **send_resolved:** 
 
 > Espera um valor booleano para dizer se deve notificar sobre alertas resolvidos.
+
+
+<br>
+
+<br>
+
+
+## _**promtail-config.yaml**_
+
+```YAML
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    
+positions:
+  filename: /tmp/positions.yaml
+
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker-logs
+          __path__: /var/lib/docker/containers/*/*.log
+          team: DevOps
+          env: Prod
+    pipeline_stages:
+      - match:
+          selector: '{job="docker-logs"} |= "service="'
+          stages:
+            - regex:
+                expression: '.*service=(?P<service>[^\s]+).*'
+            - labels:
+                service:
+```
+
+<br>
+
+### Syntax;
+
+<br>
+
+
+- **server:**
+
+> Define as configurações e comportamentos do webserver do Promtail. 
+
+<br>
+
+
+- **http_listen_port:**
+
+> Configuramos o servidor para escutar conexões com a respective porta que definimos.
+
+<br>
+
+
+- **clients:**
+
+> Descreve como o Promtail se conecta a multiplas instancias do Grafana Loki
+> mandando logs para cada um.
+> 
+> WARNING: If one of the remote Loki servers fails to respond or responds
+with any error which is retryable, this will impact sending logs to any
+other configured remote Loki servers.  Sending is done on a single thread!
+It is generally recommended to run multiple Promtail clients in parallel
+if you want to send to multiple remote Loki instances.
+
+<br>
+
+- **url:**
+
+> Essa diretiva define de onde o Loki é escutado pelo Promtail webserver denotado
+> no Loki com http_listen_address e http_listen_port.
+> Se o Loki estiver a rodar em modo microserviços, isso é a HTTP URL para o Distributor.
+> Path para a 'push API' precisa ser includa. Example: http://example.com:3100/loki/api/v1/push
+
+<br>
+
+- **position:** 
+
+> Descreve como salvar um Offset de arquivos lidos para o disk.
+> Esse bloco onde o promtail irá salvar o arquivo indicado até quão longe ele
+> leu o arquivo. Isso é preciso para quando o Promtail é reiniciado para permitir
+> que ele continue de onde parou.
+
+<br>
+
+- **scrape_configs:**
+
+> Esse bloco configura como o Promtail pode fazer o 'scrape' de logs de uma série
+> de 'targers' usando um dicovery method especificado. O Promtail usa o mesmo 
+> Prometheus SCRAPE_CONFIGS. Isso significa que, se você já possui uma instância 
+> de Prometheus, a configuração será muito semelhante.
+
