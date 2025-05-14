@@ -823,14 +823,84 @@ Para isso temos como recurso de migração ou alternativo o Grafana alloy.
 
 ## Grafana Alloy - _**config.alloy**_
 
-
-- Por agora apenas esse exemplo utilizando traces:
-
 ```alloy
+// ###############################
+// #### Logging Configuration ####
+// ###############################
+
+livedebugging {
+  enabled = true
+}
+
+local.file_match "local_files" {
+    path_targets = [{"__path__" = "/var/lib/docker/containers/*/*.log", "job" = "java-api", "hostname" = constants.hostname}]
+    sync_period  = "5s"
+}
+
+loki.source.file "log_scrape" {
+    targets    = local.file_match.local_files.targets
+    forward_to    = [loki.process.add_labels.receiver]
+    tail_from_end = true
+}
+
+loki.process "add_labels" {
+  stage.json {
+    expressions = {
+      log   = "",
+      time  = "",
+      stream = "",
+    }
+  }
+
+  stage.regex {
+    expression = ".*service=(?P<service>[^ ]+).*level=(?P<level>[^ ]+).*traceId=(?P<traceId>[^ ]+).*"
+  }
+
+  stage.labels {
+    values = {
+      service = "",
+      level   = "",
+      traceId = "",
+    }
+  }
+
+  stage.static_labels {
+    values = {
+      team = "backend",
+      env  = "production",
+    }
+  }
+
+  stage.timestamp {
+    source = "time"
+    format = "RFC3339Nano"
+  }
+
+  stage.output {
+    source = "log"
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
 logging {
   level  = "debug"
   format = "logfmt"
 }
+
+
+
+// ###############################
+// #### Traces Configuration #####
+// ###############################
+
 
 otelcol.receiver.otlp "default" {
   http {
@@ -859,4 +929,120 @@ otelcol.exporter.otlphttp "tempo" {
 }
 ```
 
-More details comming soon !
+<br>
+
+- O Grafana alloy dinâmicamente configura e conecta COMPONENTES usando o Alloy configuration syntax.
+  <br>
+  <br>
+- O alloy nos permite coletar, transformar e distribuir dados de telemetria.
+  <br>
+  <br>
+- Cada COMPONENTE de configuração realiza tasks especificas ou define o fluxo de dados e conexão de componentes.
+
+<br>
+
+### Syntax;
+
+A sintaxe do alloy na sua essência utiliza COMPONENTES para configurar o comportamento e o fluxo de dados.
+<br>
+<br>
+Essa sintaxe do alloy visa tornar os arquivos mais fáceis de ler e escrever. Fazendo o uso de blocos, atributos e expressões.
+<br>
+<br>
+Como a sua sintaxe é declarativa, a ordem dos componentes, blocos e atributos não importa. A relação entre 
+componentes que determina a sequência de operações do pipeline. 
+
+- Documentação: https://grafana.com/docs/alloy/latest/get-started/configuration-syntax/
+
+<br>
+<br>
+
+- Grupos de blocos relacionados típicamente representam a criação de components.
+- Blocos possuem um nome que consistem no identificador separado por um `.`, uma label de utilizador opcionalmente, e um body contendo atributos e Nested Blocks.  
+- Atributos aparecem dentro de blocos e atribuem valor a nomes.
+- Expressões representam valores, literalmente ou referenciando e combinando outros valores.
+
+<br>
+<br>
+
+
+- Collection: Monta um diretório local com um certo path especificado.
+```
+local.file_match "local_files" {
+    path_targets = [{"__path__" = "/var/lib/docker/containers/*/*.log", "job" = "java-api", "hostname" = constants.hostname}]
+    sync_period  = "5s"
+}
+```
+
+<br>
+<br>
+
+- Collection: Pega a correspondência do arquivo como entrada, e faz o scrape nos arquivos de log montados.
+- E por meio do `forward_to    = [loki.process.add_labels.receiver]` especificamos que componente deverá processar os logs a seguir, fazendo um link entre componentes.
+```
+loki.source.file "log_scrape" {
+    targets    = local.file_match.local_files.targets
+    forward_to    = [loki.process.add_labels.receiver]
+    tail_from_end = true
+}
+```
+
+<br>
+<br>
+
+
+- Transformation: Puxa alguns dados para fora da log message e transforma em labels.
+```
+loki.process "add_labels" {
+  stage.json {
+    expressions = {
+      log   = "",
+      time  = "",
+      stream = "",
+    }
+  }
+
+  stage.regex {
+    expression = ".*service=(?P<service>[^ ]+).*level=(?P<level>[^ ]+).*traceId=(?P<traceId>[^ ]+).*"
+  }
+
+  stage.labels {
+    values = {
+      service = "",
+      level   = "",
+      traceId = "",
+    }
+  }
+
+  stage.static_labels {
+    values = {
+      team = "backend",
+      env  = "production",
+    }
+  }
+
+  stage.timestamp {
+    source = "time"
+    format = "RFC3339Nano"
+  }
+
+  stage.output {
+    source = "log"
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+```
+
+<br>
+<br>
+
+
+- Tudo isso que vem desse componente anterior é recebido no 'loki.write.local.receiver' component e é escrito na API remota do Loki.
+```
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+```
