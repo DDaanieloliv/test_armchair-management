@@ -42,7 +42,8 @@ ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
 
 # Variáveis de ambiente do OpenTelemetry.
 ENV OTEL_SERVICE_NAME=seatManager-API
-ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
+#ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
 ENV OTEL_METRICS_EXPORTER=none
 ENV OTEL_LOGS_EXPORTER=none
 ENV OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf

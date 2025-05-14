@@ -119,6 +119,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     image: grafana/alloy:latest
     container_name: alloy
     volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
       - ./alloy/config.alloy:/etc/alloy/config.alloy
     ports:
       - "127.0.0.1:4320:4320"
@@ -126,19 +127,19 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
 
-  # Promtail (envia os logs para o Loki)
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
-      - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml  # Mapeia seu arquivo de configuração local para o container.
-      #- /var/run/docker.sock:/var/run/docker.sock # Permite que o Promtail se conecte ao daemon Docker. Para associar logs aos nomes dos containers (labels, nomes, etc).
-    command: -config.file=/etc/promtail/promtail-config.yaml
-    depends_on:
-      - loki
-    networks:
-      - my_network
+#  # Promtail (envia os logs para o Loki)
+#  promtail:
+#    image: grafana/promtail:latest
+#    container_name: promtail
+#    volumes:
+#      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Monta o diretório onde os logs dos containers vivem no host e ":ro" = somente leitura. Fazendo com que os logs sejam lidos direto dos containers Docker.
+#      - ./promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml  # Mapeia seu arquivo de configuração local para o container.
+#      #- /var/run/docker.sock:/var/run/docker.sock # Permite que o Promtail se conecte ao daemon Docker. Para associar logs aos nomes dos containers (labels, nomes, etc).
+#    command: -config.file=/etc/promtail/promtail-config.yaml
+#    depends_on:
+#      - loki
+#    networks:
+#      - my_network
 
 
 
@@ -155,20 +156,20 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - my_network
 
 
-  collector:
-    image: otel/opentelemetry-collector-contrib:0.97.0
-    container_name: collector
-    volumes:
-      - ./collector/otel-collector.yaml:/etc/otelcol/config.yaml
-    command: [ "--config=/etc/otelcol/config.yaml" ]
-    ports:
-      - "127.0.0.1:4317:4317"   # OTLP gRPC
-      - "127.0.0.1:4318:4318"   # OTLP HTTP
-      - "127.0.0.1:8888:8888"   # Metrics/debug
-    depends_on:
-      - tempo
-    networks:
-      - my_network
+#  collector:
+#    image: otel/opentelemetry-collector-contrib:0.97.0
+#    container_name: collector
+#    volumes:
+#      - ./collector/otel-collector.yaml:/etc/otelcol/config.yaml
+#    command: [ "--config=/etc/otelcol/config.yaml" ]
+#    ports:
+#      - "127.0.0.1:4317:4317"   # OTLP gRPC
+#      - "127.0.0.1:4318:4318"   # OTLP HTTP
+#      - "127.0.0.1:8888:8888"   # Metrics/debug
+#    depends_on:
+#      - tempo
+#    networks:
+#      - my_network
 
 
   tempo:
@@ -200,16 +201,16 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - loki
 
 
-  ui-angular_app:
-    build: ../../armchair-management-ui
-    image: ui-app
-    ports:
-      - "4200:80"
-    container_name: ui-angular_app
-    restart: always
-    depends_on:
-      spring_app:
-        condition: service_healthy
+#  ui-angular_app:
+#    build: ../../armchair-management-ui
+#    image: ui-app
+#    ports:
+#      - "4200:80"
+#    container_name: ui-angular_app
+#    restart: always
+#    depends_on:
+#      spring-app:
+#        condition: service_healthy
 
 
 
