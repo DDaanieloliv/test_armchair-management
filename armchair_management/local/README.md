@@ -824,12 +824,17 @@ Para isso temos como recurso de migração ou alternativo o Grafana alloy.
 ## Grafana Alloy - _**config.alloy**_
 
 ```alloy
-// ###############################
-// #### Logging Configuration ####
-// ###############################
+// ###############################################
+// #### Logging Configuration ( Using files ) ####
+// ###############################################
 
 livedebugging {
   enabled = true
+}
+
+logging {
+  level  = "debug"
+  format = "logfmt"
 }
 
 local.file_match "local_files" {
@@ -890,10 +895,43 @@ loki.write "local" {
   }
 }
 
+
+// #######################################################
+// #### Logging Configuration ( Using OpenTelemetry ) ####
+// #######################################################
+
+
 logging {
   level  = "debug"
   format = "logfmt"
 }
+
+livedebugging {
+  enabled = true
+}
+
+otelcol.receiver.otlp "default_logs" {
+  http {
+    endpoint="0.0.0.0:4444"
+  }
+
+  output {
+    logs = [otelcol.exporter.loki.default.input]
+  }
+}
+
+
+otelcol.exporter.loki "default" {
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+
 
 
 
@@ -965,6 +1003,7 @@ componentes que determina a sequência de operações do pipeline.
 <br>
 <br>
 
+### $$Abordagem \;\; Utilizando \;\;Files:$$
 
 - Collection: Monta um diretório local com um certo path especificado.
 ```
@@ -1028,7 +1067,7 @@ loki.process "add_labels" {
 
   stage.output {
     source = "log"
-  }
+  } 
 
   forward_to = [loki.write.local.receiver]
 }

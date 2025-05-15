@@ -123,6 +123,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - ./alloy/config.alloy:/etc/alloy/config.alloy
     ports:
       - "127.0.0.1:4320:4320"
+      - "127.0.0.1:4444:4444"
     networks:
       - my_network
 
@@ -201,16 +202,16 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - loki
 
 
-  ui-angular_app:
-    build: ../../armchair-management-ui
-    image: ui-app
-    ports:
-      - "4200:80"
-    container_name: ui-angular_app
-    restart: always
-    depends_on:
-      spring-app:
-        condition: service_healthy
+#  ui-angular_app:
+#    build: ../../armchair-management-ui
+#    image: ui-app
+#    ports:
+#      - "4200:80"
+#    container_name: ui-angular_app
+#    restart: always
+#    depends_on:
+#      spring-app:
+#        condition: service_healthy
 
 
 

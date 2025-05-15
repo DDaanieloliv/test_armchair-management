@@ -1,58 +1,96 @@
+// ###############################################
+// #### Logging Configuration ( Using files ) ####
+// ###############################################
+
+
+//local.file_match "local_files" {
+//    path_targets = [{"__path__" = "/var/lib/docker/containers/*/*.log", "job" = "java-api", "hostname" = constants.hostname}]
+//    sync_period  = "5s"
+//}
+//
+//loki.source.file "log_scrape" {
+//    targets    = local.file_match.local_files.targets
+//    forward_to    = [loki.process.add_labels.receiver]
+//    tail_from_end = true
+//}
+//
+//loki.process "add_labels" {
+//  stage.json {
+//    expressions = {
+//      log   = "",
+//      time  = "",
+//      stream = "",
+//    }
+//  }
+//
+//  stage.regex {
+//    expression = ".*service=(?P<service>[^ ]+).*level=(?P<level>[^ ]+).*traceId=(?P<traceId>[^ ]+).*"
+//  }
+//
+//  stage.labels {
+//    values = {
+//      service = "",
+//      level   = "",
+//      traceId = "",
+//    }
+//  }
+//
+//  stage.static_labels {
+//    values = {
+//      team = "backend",
+//      env  = "production",
+//    }
+//  }
+//
+//  stage.timestamp {
+//    source = "time"
+//    format = "RFC3339Nano"
+//  }
+//
+//  stage.output {
+//    source = "log"
+//  }
+//
+//  forward_to = [loki.write.local.receiver]
+//}
+//
+//
+//loki.write "local" {
+//  endpoint {
+//    url = "http://loki:3100/loki/api/v1/push"
+//  }
+//}
+
+
+
+// #######################################################
+// #### Logging Configuration ( Using OpenTelemetry ) ####
+// #######################################################
+
+
+logging {
+  level  = "debug"
+  format = "logfmt"
+}
+
 livedebugging {
   enabled = true
 }
 
-local.file_match "local_files" {
-    path_targets = [{"__path__" = "/var/lib/docker/containers/*/*.log", "job" = "java-api", "hostname" = constants.hostname}]
-    sync_period  = "5s"
+otelcol.receiver.otlp "default_logs" {
+  http {
+    endpoint="0.0.0.0:4444"
+  }
+
+  output {
+    logs = [otelcol.exporter.loki.default.input]
+  }
 }
 
-loki.source.file "log_scrape" {
-    targets    = local.file_match.local_files.targets
-    forward_to    = [loki.process.add_labels.receiver]
-    tail_from_end = true
-}
 
-loki.process "add_labels" {
-  stage.json {
-    expressions = {
-      log   = "",
-      time  = "",
-      stream = "",
-    }
-  }
-
-  stage.regex {
-    expression = ".*service=(?P<service>[^ ]+).*level=(?P<level>[^ ]+).*traceId=(?P<traceId>[^ ]+).*"
-  }
-
-  stage.labels {
-    values = {
-      service = "",
-      level   = "",
-      traceId = "",
-    }
-  }
-
-  stage.static_labels {
-    values = {
-      team = "backend",
-      env  = "production",
-    }
-  }
-
-  stage.timestamp {
-    source = "time"
-    format = "RFC3339Nano"
-  }
-
-  stage.output {
-    source = "log"
-  }
-
+otelcol.exporter.loki "default" {
   forward_to = [loki.write.local.receiver]
 }
-
 
 loki.write "local" {
   endpoint {
@@ -60,13 +98,13 @@ loki.write "local" {
   }
 }
 
-logging {
-  level  = "debug"
-  format = "logfmt"
-}
 
 
 
+
+// ###############################
+// #### Traces Configuration #####
+// ###############################
 
 
 otelcol.receiver.otlp "default" {

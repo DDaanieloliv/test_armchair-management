@@ -2,6 +2,7 @@ package com.ddaaniel.armchair_management.config.logProperties;
 
 import ch.qos.logback.classic.*;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.net.SyslogAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.rolling.RollingFileAppender;
@@ -57,6 +58,8 @@ public class LogbackConfig {
 //        appAppender.setRollingPolicy(appPolicy);
 //        appAppender.setEncoder(jsonEncoder);
 //        appAppender.start();
+
+
 
         // === AUDIT LOG ===
         RollingFileAppender<ILoggingEvent> auditAppender = new RollingFileAppender<>();
