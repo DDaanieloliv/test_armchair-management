@@ -11,21 +11,26 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-@Order(2)
+//@Order(1)
 @Component
-public class AuditLoggingFilter implements Filter {
+public class MainLoggingFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger("AUDIT");
+    private static final Logger logger = LoggerFactory.getLogger(MainLoggingFilter.class);
 
     private final LogSanitizer logSanitizer = new LogSanitizer();
+
+    private static final Set<String> SENSITIVE_HEADERS = Set.of("Authorization", "Cookie", "Set-Cookie",
+            "X-Api-Key", "X-Forwarded-For",
+            "Proxy-Authorization", "Proxy-Authenticate");
+
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -56,7 +61,7 @@ public class AuditLoggingFilter implements Filter {
 
         try {
             // Log da requisição
-            logger.info("AUDIT - Request - IP: {}, Method: {}, URI: {}, Headers: {}, Body: {}",
+            logger.info("- Request - IP: {}, Method: {}, URI: {}, Headers: {}, Body: {}",
                      clientIp, method, requestUri, headers, maskedRequestBody);
 
             // Executa a requisição com os wrappers
@@ -68,7 +73,7 @@ public class AuditLoggingFilter implements Filter {
             String maskedResponseBody = logSanitizer.sanitizeJson(responseBody);
 
             // Log da resposta
-            logger.info("AUDIT - Response - Status: {}, Body: {}",  status, maskedResponseBody);
+            logger.info("- Response - Status: {}, Body: {}",  status, maskedResponseBody);
 
             // Reescreve a resposta original com o conteúdo do wrapper
             wrappedResponse.copyBodyToResponse();
@@ -78,7 +83,21 @@ public class AuditLoggingFilter implements Filter {
         }
     }
 
-    // Método para capturar todos os headers da requisição
+
+    private Map<String, String> getFilteredHeaders(HttpServletRequest request) {
+        Map<String, String> headers = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            if (!SENSITIVE_HEADERS.contains(headerName) && !"host".equalsIgnoreCase(headerName)) {
+                headers.put(headerName, request.getHeader(headerName));
+            }
+        }
+        return headers;
+    }
+
+        // Método para capturar todos os headers da requisição
     private Map<String, String> getHeaders(HttpServletRequest request) {
         Map<String, String> headers = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();

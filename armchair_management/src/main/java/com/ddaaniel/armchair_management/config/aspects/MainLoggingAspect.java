@@ -11,9 +11,9 @@ import java.util.Arrays;
 
 @Aspect
 @Component
-public class AuditLoggingAspect {
+public class MainLoggingAspect {
 
-    private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
+    private static final Logger mainLogger = LoggerFactory.getLogger(MainLoggingAspect.class);
 
     @Pointcut("execution(* com.ddaaniel.armchair_management.controller.service.*.*(..))")
     public void serviceMethods(){}
@@ -22,13 +22,13 @@ public class AuditLoggingAspect {
     public Object logAuditController(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
 
-        auditLogger.info("AUDIT - Request: {}, Args: {}",
+        mainLogger.info("- Request: {}, Args: {}",
                 proceedingJoinPoint.getSignature().toString(), Arrays.toString(proceedingJoinPoint.getArgs()));
 
         Object action = proceedingJoinPoint.proceed();
         long endTime = System.currentTimeMillis() - startTime;
 
-        auditLogger.info("AUDIT - Response from {} completed in {}ms",
+        mainLogger.info("- Response from {} completed in {}ms",
                 proceedingJoinPoint.getSignature().toString(), endTime);
 
         return action;
@@ -38,20 +38,20 @@ public class AuditLoggingAspect {
     public Object logAuditService(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
 
-        auditLogger.info("AUDIT - Service method started: {}, Args: {}",
+        mainLogger.info("- Service method started: {}, Args: {}",
                 proceedingJoinPoint.getSignature().toString(), Arrays.toString(proceedingJoinPoint.getArgs()));
 
         Object action;
         try {
             action = proceedingJoinPoint.proceed();
         } catch (Exception ex){
-            auditLogger.error("AUDIT - Exception in Service method: {} - Error: {}",
+            mainLogger.error("- Exception in Service method: {} - Error: {}",
                     proceedingJoinPoint.getSignature().toString(), ex.getMessage(), ex);
             throw ex;
         }
 
         long endTime = System.currentTimeMillis() - startTime;
-        auditLogger.info("AUDIT - Service method completed: {} in {}ms.",
+        mainLogger.info("- Service method completed: {} in {}ms.",
                 proceedingJoinPoint.getSignature().toString(), endTime);
         return action;
     }
@@ -60,20 +60,20 @@ public class AuditLoggingAspect {
     public Object logAuditRepository(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
 
-        auditLogger.info("AUDIT - Query started: {} with args: {}",
+        mainLogger.info("- Query started: {} with args: {}",
                 proceedingJoinPoint.getSignature().toString(), Arrays.toString(proceedingJoinPoint.getArgs()));
 
         Object action = proceedingJoinPoint.proceed();
         long endTime = System.currentTimeMillis() - startTime;
 
-        auditLogger.info("AUDIT - Query completed: {}, Execution time: {}ms.",
+        mainLogger.info("- Query completed: {}, Execution time: {}ms.",
                 proceedingJoinPoint.getSignature().toString(), endTime);
         return action;
     }
 
     @AfterThrowing(pointcut = "serviceMethods()", throwing = "ex")
     public void logAuditServiceExceptions(JoinPoint joinPoint, Exception ex) {
-        auditLogger.error("AUDIT - Exception in method {} - Error: {}",
+        mainLogger.error("- Exception in method {} - Error: {}",
                 joinPoint.getSignature().toString(), ex.getMessage(), ex);
     }
 }

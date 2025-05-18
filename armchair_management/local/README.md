@@ -1003,7 +1003,11 @@ componentes que determina a sequência de operações do pipeline.
 <br>
 <br>
 
-### $$Abordagem \;\; Utilizando \;\;Files:$$
+
+### $$Abordagem \;\; Utilizando \;\;LogFiles:$$
+
+
+<br>
 
 - Collection: Monta um diretório local com um certo path especificado.
 ```
@@ -1083,5 +1087,79 @@ loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
   }
+}
+```
+<br>
+<br>
+
+### $$Abordagem \;\; Utilizando \;\;OpenTelemetry Logs:$$
+
+
+- `otelcol.receiver.otlp` is a wrapper over the upstream OpenTelemetry Collector otlp receiver.
+```
+otelcol.receiver.otlp "default_logs" {
+  http {
+    endpoint="0.0.0.0:4444"
+  }
+
+  output {
+    logs = [otelcol.exporter.loki.default.input]
+  }
+}
+```
+
+- `otelcol.exporter.loki` aceita logs com "OTLP-formatted" vindo de outro componente "otelcol", converte as entradas de logs para "Loki-formatted", e os exporta para o componente Loki.
+```
+otelcol.exporter.loki "default" {
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+```
+
+<br>
+<br>
+
+
+### $$Abordagem \;\; Utilizando \;\;OpenTelemetry Traces:$$
+
+
+- `otelcol.receiver.otlp` is a wrapper over the upstream OpenTelemetry Collector otlp receiver. 
+```
+otelcol.receiver.otlp "default" {
+  http {
+    endpoint="0.0.0.0:4320"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+```
+
+- `otelcol.processor.batch` aceita telemetry data de outro componente otelcol e os empurra para "batches". Batching melhora a compressão of data e reduz o número de solicitações de saída a rede necessárias para transmitir dados. Este processador suporta processamento em lote(batching) baseado em tamanho e tempo.
+```
+otelcol.processor.batch "default" {
+  output {
+    traces  = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+```
+
+
+- `otelcol.exporter.otlphttp` aceita telemetry data de outros componentes otelcol e escreve eles pela rede usando o OTLP HTTP protocol. 
+```
+otelcol.exporter.otlphttp "tempo" {
+    client {
+        endpoint = "http://tempo:4318"
+        tls {
+            insecure             = true
+            insecure_skip_verify = true
+        }
+    }
 }
 ```

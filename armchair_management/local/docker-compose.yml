@@ -20,7 +20,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     ports: # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
       - "8080:8080"
     container_name: spring-app # "Settamos" o nome do container ao ser executado.
-    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
+#    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
     #volumes:
     #  - ../logs:/app/logs
     depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
@@ -83,7 +83,7 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     ports:
       - "127.0.0.1:9187:9187"
     environment:
-      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_NAME: ${DATA_SOURCE_NAME}
     depends_on:
       - postgres_db
     networks:
@@ -202,16 +202,16 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       - loki
 
 
-#  ui-angular_app:
-#    build: ../../armchair-management-ui
-#    image: ui-app
-#    ports:
-#      - "4200:80"
-#    container_name: ui-angular_app
-#    restart: always
-#    depends_on:
-#      spring-app:
-#        condition: service_healthy
+  ui-angular_app:
+    build: ../../armchair-management-ui
+    image: ui-app
+    ports:
+      - "4200:80"
+    container_name: ui-angular_app
+    restart: always
+    depends_on:
+      spring-app:
+        condition: service_healthy
 
 
 
