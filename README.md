@@ -22,27 +22,42 @@ Você pode clonar este repositório via SSH ou HTTPS:
 #### SSH
 
 ```bash
-git clone git@gitlab.com:DDaanieloliv/Impl-Observability.git
+git clone git@gitlab.com:DDaanieloliv/JAVA_Impl-Observability-Prometheus-Grafana-OpenTelemetry-Loki.git
 # ou
-git clone git@github.com:DDaanieloliv/Docker-.git
+git clone git@github.com:DDaanieloliv/JAVA_Impl-Observability-Prometheus-Grafana-OpenTelemetry-Grafana_Loki.git
 ```
 
 #### HTTPS
 
 ```bash
-git clone https://gitlab.com/DDaanieloliv/Impl-Observability.git
+git clone https://gitlab.com/DDaanieloliv/JAVA_Impl-Observability-Prometheus-Grafana-OpenTelemetry-Loki.git
 # ou
-git clone https://github.com/DDaanieloliv/Docker-.git
+git clone https://github.com/DDaanieloliv/JAVA_Impl-Observability-Prometheus-Grafana-OpenTelemetry-Grafana_Loki.git
 ```
 
 
 
 ### Executando projeto
 
+> Como essa implementação por hora é apenas recomendada para o 
+> ambiente de desenvolvimento, coloquei a infraestrutura (Containers Docker) na pasta /local
+> que se encontra na raiz da pasta /armchair_management.
+
+<br>
+
+- Acesse a pasta que contem a infraestrutura para fazer o launch do projeto.
 ```bash
-cd /Impl-Observability/armchair_management/local/
-docker compose up -d 
+cd /JAVA_impl-Observability-Prometheus-Grafana-OpenTelemetry/armchair_management/local
 ```
+
+- Crie um arquivo `.env` de acordo como o exemplificado no arquivo `armchair_management/local/env-file.model`
+
+
+- Por fim execute o arquivo `local/docker-compose.yml`.
+```bash
+docker compose up -d
+```
+
 
 <br>
 
@@ -50,7 +65,7 @@ docker compose up -d
 ### Estrutura do projeto:
 
 ```
-Impl-Observability/
+JAVA_impl-Observability-Prometheus-Grafana-OpenTelemetry/
 │
 ├── armchair_management/                 # Backend (Java, com observabilidade)
 │   ├── collection/                      # Requisições exemplo
@@ -60,7 +75,7 @@ Impl-Observability/
 │   │   ├── alloy/
 │   │   ├── collector/
 │   │   ├── docker-compose.yml           # Composição dos serviços de observabilidade
-│   │   ├── env-file.model
+│   │   ├── env-file.model               # Modelo de Variáveis de ambiente / Intrução de config para '.env' file
 │   │   ├── loki/
 │   │   ├── prometheus/
 │   │   ├── promtail/
@@ -90,8 +105,8 @@ Impl-Observability/
 │       ├── server.ts                    # Servidor para SSR
 │       └── styles.css                   # Estilos globais
 │
-├── docker-compose.yml                  # Orquestração principal do projeto
-├── env.model                           # Modelo de variáveis de ambiente
+├── docker-compose.yml                  # Orquestração principal do projeto (Prod)
+├── env.model                           # Modelo de variáveis de ambiente (Prod)
 ├── LICENSE
 └── README.md                           # Instruções gerais do projeto
 ```

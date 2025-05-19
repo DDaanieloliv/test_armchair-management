@@ -36,6 +36,11 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
     #  - ./env/.env  # Definimos a "file" que obteremos no ligar do padrão.
     networks: # Associamos esse container com uma rede/s especifica.
       - my_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 
   prometheus:
