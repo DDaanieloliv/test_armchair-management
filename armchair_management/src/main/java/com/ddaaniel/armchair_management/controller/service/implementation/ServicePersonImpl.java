@@ -39,7 +39,7 @@ public class ServicePersonImpl implements IPersonService {
 
         Person pessoa = armchair.getPerson();
         removeOccupantFromSeat(armchair);
-        deletePersonRegister(pessoa);
+        iPersonRepository.delete(pessoa);
     }
 
 
@@ -67,11 +67,4 @@ public class ServicePersonImpl implements IPersonService {
         iSeatRepository.save(armchair);
     }
 
-    private void deletePersonRegister(Person pessoa) {
-        //pessoa.getSeat().setPerson(null);
-        //pessoa.getSeat().setFree(true);
-        //iPersonRepository.save(pessoa);
-
-        iPersonRepository.delete(pessoa);
-    }
 }

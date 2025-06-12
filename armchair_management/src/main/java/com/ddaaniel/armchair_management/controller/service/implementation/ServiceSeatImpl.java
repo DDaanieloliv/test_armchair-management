@@ -24,13 +24,11 @@ public class ServiceSeatImpl implements ISeatService {
 
 
     private final ISeatRepository seatRepository;
-    private final IPersonRepository personRepository;
     private final SeatMapper seatMapper;
 
     @Autowired
     public ServiceSeatImpl(ISeatRepository seatRepository, IPersonRepository personRepository, SeatMapper seatMapper) {
         this.seatRepository = seatRepository;
-        this.personRepository = personRepository;
         this.seatMapper = seatMapper;
     }
 

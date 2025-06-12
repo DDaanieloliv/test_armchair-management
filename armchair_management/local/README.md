@@ -1163,3 +1163,9 @@ otelcol.exporter.otlphttp "tempo" {
     }
 }
 ```
+
+> Há muitas maneiras de usarmos o Grafana Alloy para coleta de métricas, logs e traces, porem entre tantas possíveis
+> para esse exemplo escolhi usar um JAVA Agente (.jar) da OpenTelemetry que automaticamente extrais os logs, traces e caso desejado métricas. 
+> Configuramos na etapa de Build (Especificada em "armchair_management/Dockerfile") para que a nossa aplicação
+> faça o envio desses dados para o path definido na etapa de build (mais especificamente nas variáveis passadas para o Opentelemetry Agent).
+> Path's esses que fazem referência ao Grafana Alloy que, recebe os dados, os processa e os exporta para o DataSource devido.

@@ -14,13 +14,13 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
 
   spring-app: # Definimos o nome do serviço.
     build: # Definimos que a nossa Imagem será obtida por meio de um "build". E dentro dessa diretiva definimos como será feito o "build".
-      context: .. # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
-      dockerfile: Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
+      context: ..   # Usamos essa diretiva para informar o path de onde será feito o "build" da nossa Imagem.
+      dockerfile: dev/Dockerfile # Especificamos qual arquivo será utilizado para fazer o "build" da Imagem.
     image: myapp  # Como faremos o "build" de uma Imagem, definimos o seu nome.
     ports: # Fazemos o mapeamento que todo solicitação feita a porta 8080 do host para a porta 8080 do container.
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     container_name: spring-app # "Settamos" o nome do container ao ser executado.
-#    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
+    #    restart: always # Definimos a sua política de reinicialização em casos de falha ou parada.
     #volumes:
     #  - ../logs:/app/logs
     depends_on: # Usamos essa diretiva para dizer que há uma dependência entre serviço.
@@ -43,20 +43,20 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       retries: 5
 
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    #    network_mode: "host"  # 👈 ADICIONE ESTA LINHA
-    ports:
-      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.external-url=http://localhost:9090'
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
-    networks:
-      - my_network
+#  prometheus:
+#    image: prom/prometheus:latest
+#    container_name: prometheus
+#    #    network_mode: "host"  # 👈 ADICIONE ESTA LINHA
+#    ports:
+#      - "127.0.0.1:9090:9090" # Expondo o Prometheus no host
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--web.external-url=http://localhost:9090'
+#    volumes:
+#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+#      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
+#    networks:
+#      - my_network
 
 
 
@@ -82,43 +82,43 @@ services: # Diretiva que indica que sob essa sessão definiremos containers.
       retries: 5  # Número limite de falhas aceitas antes do container ser considerado unhealthy.
 
 
-#  postgres_exporter:
-#    image: bitnami/postgres-exporter
-#    container_name: postgres_exporter
+  #  postgres_exporter:
+  #    image: bitnami/postgres-exporter
+  #    container_name: postgres_exporter
+  #    ports:
+  #      - "127.0.0.1:9187:9187"
+  #    environment:
+  #      DATA_SOURCE_NAME: ${DATA_SOURCE_NAME}
+  #    depends_on:
+  #      - postgres_db
+  #    networks:
+  #      - my_network
+  #
+
+#  alertmanager:
+#    image: prom/alertmanager
+#    container_name: alertmanager
 #    ports:
-#      - "127.0.0.1:9187:9187"
-#    environment:
-#      DATA_SOURCE_NAME: ${DATA_SOURCE_NAME}
-#    depends_on:
-#      - postgres_db
+#      - "127.0.0.1:9093:9093"
+#    volumes:
+#      - ./alertmanager/config.yml:/etc/alertmanager/config.yml
+#    command:
+#      - '--config.file=/etc/alertmanager/config.yml'
+#      - '--web.external-url=http://localhost:9093'
 #    networks:
 #      - my_network
 #
-
-  alertmanager:
-    image: prom/alertmanager
-    container_name: alertmanager
-    ports:
-      - "127.0.0.1:9093:9093"
-    volumes:
-      - ./alertmanager/config.yml:/etc/alertmanager/config.yml
-    command:
-      - '--config.file=/etc/alertmanager/config.yml'
-      - '--web.external-url=http://localhost:9093'
-    networks:
-      - my_network
-
-  mailpit:
-    image: axllent/mailpit
-    container_name: mailpit
-    ports:
-      - "127.0.0.1:1025:1025"
-      - "127.0.0.1:8025:8025"
-    #volumes:
-    #  - /data
-    networks:
-      - my_network
-
+#  mailpit:
+#    image: axllent/mailpit
+#    container_name: mailpit
+#    ports:
+#      - "127.0.0.1:1025:1025"
+#      - "127.0.0.1:8025:8025"
+#    #volumes:
+#    #  - /data
+#    networks:
+#      - my_network
+#
 
 #  alloy:
 #    image: grafana/alloy:latest
